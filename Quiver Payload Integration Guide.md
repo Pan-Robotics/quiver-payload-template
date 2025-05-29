@@ -7,7 +7,7 @@ This guide provides a comprehensive framework for manufacturers and developers t
 
 -   Connector Hardware Standard
 -   Electrical Interface Standard
--   [CAN and Ethernet Interface Protocol Options
+-   CAN and Ethernet Interface Protocol Options
 -   MAVLink and DroneCAN Firmware
 -   Ground Control Plugin Configuration
 -   Example Potential Payload Attachments
