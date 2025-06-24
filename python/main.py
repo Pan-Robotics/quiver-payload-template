@@ -10,10 +10,10 @@ SYSTEM_ID = 100
 COMPONENT_ID = 200
 
 # Setup GPIO
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(PIN_ANALOG_IO, GPIO.IN)  # Requires external ADC
-GPIO.setup(PIN_DIGITAL_IO, GPIO.OUT)
-GPIO.output(PIN_DIGITAL_IO, GPIO.LOW)
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(PIN_ANALOG_IO, GPIO.IN)  # Requires external ADC
+#GPIO.setup(PIN_DIGITAL_IO, GPIO.OUT)
+#GPIO.output(PIN_DIGITAL_IO, GPIO.LOW)
 
 # Initialize MAVLink (UDP)
 conn = mavutil.mavlink_connection(f'udpin:0.0.0.0:{ETHERNET_UDP_PORT}', source_system=SYSTEM_ID, source_component=COMPONENT_ID)

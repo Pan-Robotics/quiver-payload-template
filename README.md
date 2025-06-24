@@ -73,9 +73,7 @@ A template repository for developing payload firmware for the Quiver UAS, suppor
    After reboot, run:
    ```bash
    sudo ip link set can0 up type can bitrate 500000
-   sudo ip link set can1 up type can bitrate 250000
    sudo ifconfig can0 txqueuelen 65536
-   sudo ifconfig can1 txqueuelen 65536
    dmesg | grep spi
    ```
 4. Run the Python script:

@@ -86,9 +86,7 @@ Payloads can communicate using **DroneCAN/UAVCAN** or **MAVLink-over-Ethernet**,
         ```bash
         sudo bash scripts/setup_can.sh
         sudo ip link set can0 up type can bitrate 500000
-        sudo ip link set can1 up type can bitrate 250000
         sudo ifconfig can0 txqueuelen 65536
-        sudo ifconfig can1 txqueuelen 65536
         dmesg | grep spi
         
         ```
@@ -135,9 +133,9 @@ A forkable GitHub repository provides templates for developing payload firmware 
     -   Run with: `python src/main.py`.
 -   **CAN Setup** (Raspberry Pi):
     -   Requires MCP2515 CAN module.
-    -   Configure using `scripts/setup_can.sh` (see CAN and Ethernet Interface Protocol Options.
+    -   Configure using `scripts/setup_can.sh` (see CAN and Ethernet Interface Protocol Options.)
 
-## Ground Control Plugin Configuration
+## Ground Control Plugin Configuration (WIP)
 
 Payload configuration going to be supported via a custom Mission Planner plugin.
 
