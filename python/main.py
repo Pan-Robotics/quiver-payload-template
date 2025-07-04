@@ -1,85 +1,148 @@
 #!/usr/bin/env python3
-import time
+"""
+Quiver payload simulator: DroneCAN-v0 rangefinder + MAVLink mirror
+
+Structured exactly like the official PyDroneCAN sim_rangefinder example:
+  https://github.com/dronecan/pydronecan/blob/master/examples/sim_rangefinder.py
+"""
+
+import dronecan, time, math
+from argparse import ArgumentParser
 from pymavlink import mavutil
-import can
 import RPi.GPIO as GPIO
-from quiver_payload import PIN_ANALOG_IO, PIN_DIGITAL_IO, ETHERNET_UDP_PORT, CAN_BAUDRATE
 
-# MAVLink system and component IDs
-SYSTEM_ID = 100
-COMPONENT_ID = 200
+from quiver_payload import PIN_DIGITAL_IO, CAN_BAUDRATE, PIXHAWK_IP, PIXHAWK_PORT
 
-# Setup GPIO
-#GPIO.setmode(GPIO.BCM)
-#GPIO.setup(PIN_ANALOG_IO, GPIO.IN)  # Requires external ADC
-#GPIO.setup(PIN_DIGITAL_IO, GPIO.OUT)
-#GPIO.output(PIN_DIGITAL_IO, GPIO.LOW)
+# ────────────────────────────────────────────────────────────────────────────────
+# 1) CLI arguments
+# ────────────────────────────────────────────────────────────────────────────────
+parser = ArgumentParser(description='Quiver payload: DroneCAN rangefinder + MAVLink mirror')
+parser.add_argument("--node-id",  default=42,     type=int,   help="CAN node ID")
+parser.add_argument("--uri",      default="can0", type=str,   help="SocketCAN interface")
+parser.add_argument("--rate",     default=20.0,   type=float, help="range broadcast rate (Hz)")
+parser.add_argument("--debug",    action="store_true",      help="enable debug prints")
+parser.add_argument("--gcs-ip",   default=PIXHAWK_IP,       help="Ground station IP for MAVLink")
+parser.add_argument("--gcs-port", default=PIXHAWK_PORT, type=int,   help="Ground station UDP port")
+args = parser.parse_args()
 
-# Initialize MAVLink (UDP)
-conn = mavutil.mavlink_connection(f'udpin:0.0.0.0:{ETHERNET_UDP_PORT}', source_system=SYSTEM_ID, source_component=COMPONENT_ID)
+# ────────────────────────────────────────────────────────────────────────────────
+# 2) GPIO setup for digital IO control
+# ────────────────────────────────────────────────────────────────────────────────
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(PIN_DIGITAL_IO, GPIO.OUT)
+GPIO.output(PIN_DIGITAL_IO, GPIO.LOW)
 
-# Initialize CAN (MCP2515)
-can_bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=CAN_BAUDRATE)
+# ────────────────────────────────────────────────────────────────────────────────
+# 3) Initialize DroneCAN-v0 node
+# ────────────────────────────────────────────────────────────────────────────────
+node = dronecan.make_node(
+    args.uri,
+    node_id=args.node_id,
+    bitrate=CAN_BAUDRATE
+)
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 4) MAVLink setup (UDP out)
+# ────────────────────────────────────────────────────────────────────────────────
+mav = mavutil.mavlink_connection(
+    f"udpout:{args.gcs_ip}:{args.gcs_port}",
+    source_system=args.node_id,
+    source_component=1
+)
 
 def send_mavlink_heartbeat():
-    """Send MAVLink heartbeat message."""
-    conn.mav.heartbeat_send(
-        mavutil.mavlink.MAV_TYPE_GENERIC,
+    mav.mav.heartbeat_send(
+        mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
         mavutil.mavlink.MAV_AUTOPILOT_INVALID,
         mavutil.mavlink.MAV_MODE_MANUAL_ARMED,
         0,
         mavutil.mavlink.MAV_STATE_ACTIVE
     )
 
-def send_mavlink_sensor_data(value):
-    """Send MAVLink sensor data (e.g., pressure)."""
-    conn.mav.scaled_pressure_send(
-        int(time.time() * 1000),
-        value,
-        0.0,
-        0
+def send_mavlink_distance(cm):
+    mav.mav.distance_sensor_send(
+        int(time.time() * 1000),  # time_boot_ms
+        20,    # min_distance_cm
+        400,   # max_distance_cm
+        cm,    # current_distance_cm
+        2,     # sensor type = LIDAR
+        0,     # sensor id
+        mavutil.mavlink.MAV_DISTANCE_SENSOR_VALID,
+        0,     # orientation forward
+        0      # covariance
     )
 
-def send_dronecan_status():
-    """Send DroneCAN node status message."""
-    msg = can.Message(
-        arbitration_id=0x0C2,  # NodeStatus message ID
-        data=[0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00],  # Uptime, health, mode
-        is_extended_id=True
+# ────────────────────────────────────────────────────────────────────────────────
+# 5) DSDL‐generated message classes via dronecan.uavcan namespace
+# ────────────────────────────────────────────────────────────────────────────────
+RangeMeasurement = dronecan.uavcan.equipment.range_sensor.Measurement
+NodeStatus       = dronecan.uavcan.protocol.NodeStatus
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 6a) Periodic NodeStatus (heartbeat) at 1 Hz
+# ────────────────────────────────────────────────────────────────────────────────
+def publish_node_status(_):
+    msg = NodeStatus(
+        uptime_sec=int(time.time()),
+        health=NodeStatus.HEALTH_OK,
+        mode=NodeStatus.MODE_OPERATIONAL
     )
-    can_bus.send(msg)
+    node.broadcast(msg)
+    if args.debug:
+        print("CAN Heartbeat →", msg)
 
-# Main loop
-last_mavlink_heartbeat = 0
-last_sensor = 0
-last_dronecan = 0
-while True:
-    # Send MAVLink heartbeat every 1 second
-    if time.time() - last_mavlink_heartbeat >= 1:
-        send_mavlink_heartbeat()
-        last_mavlink_heartbeat = time.time()
+node.periodic(1.0, publish_node_status)
 
-    # Send sensor data every 500ms
-    if time.time() - last_sensor >= 0.5:
-        sensor_value = 0.0  # Placeholder: Replace with ADC reading
-        send_mavlink_sensor_data(sensor_value)
-        last_sensor = time.time()
+# ────────────────────────────────────────────────────────────────────────────────
+# 6b) Periodic range measurement + MAVLink mirror at args.rate Hz
+# ────────────────────────────────────────────────────────────────────────────────
+def publish_range(_):
+    # build the DroneCAN range measurement
+    msg = RangeMeasurement()
+    msg.sensor_id     = 1
+    msg.field_of_view = math.radians(30)                   # 30° FOV
+    msg.sensor_type   = RangeMeasurement.SENSOR_TYPE_LASER
+    msg.reading_type  = RangeMeasurement.READING_TYPE_VALID
+    msg.range         = 2.5 + 2.0 * math.sin(time.time() * 2 * math.pi * 0.2)
 
-    # Send DroneCAN status every 1 second
-    if time.time() - last_dronecan >= 1:
-        send_dronecan_status()
-        last_dronecan = time.time()
+    node.broadcast(msg)
+    if args.debug:
+        print("CAN Range →", msg)
 
-    # Handle MAVLink messages
-    msg = conn.recv_match(blocking=False)
-    if msg and msg.get_type() == 'COMMAND_LONG':
-        if msg.command == mavutil.mavlink.MAV_CMD_DO_SET_ACTUATOR:
-            GPIO.output(PIN_DIGITAL_IO, GPIO.HIGH if msg.param1 > 0 else GPIO.LOW)
+    # mirror it over MAVLink
+    cm = int(msg.range * 100)
+    send_mavlink_heartbeat()
+    send_mavlink_distance(cm)
+    if args.debug:
+        print(f"MAVLink Distance → {cm} cm")
 
-    # Handle DroneCAN messages
-    can_msg = can_bus.recv(timeout=0.01)
-    if can_msg:
-        # Process DroneCAN messages (e.g., actuator commands)
-        pass
+node.periodic(1.0 / args.rate, publish_range)
 
-    time.sleep(0.01)
+# ────────────────────────────────────────────────────────────────────────────────
+# 7) Spin the node (exactly like the sim_rangefinder example)
+# ────────────────────────────────────────────────────────────────────────────────
+try:
+    print("Starting Quiver payload node; press CTRL-C to stop.")
+    node.spin()
+except KeyboardInterrupt:
+    pass
+finally:
+    node.close()
+    print("Shutdown complete.")
+# ────────────────────────────────────────────────────────────────────────────────
+'''
+UAV Ground Station Configuration
+Mission Planner: Connect to Pixhawk USB + UDP 14550.
+
+Parameters:
+
+CAN_P1_DRIVER = 1
+
+UAVCAN_ENABLE = 1
+
+RNGFND1_TYPE = 24 (DroneCAN)
+
+RNGFND2_TYPE = 10 (MAVLink)
+
+Confirm uavcan.protocol.NodeStatus and uavcan.equipment.range_sensor.Measurement are received.
+'''

@@ -67,73 +67,78 @@ The pin assignments for the 10-pin Molex Mini-Fit Jr. connector are as follows:
 
   *Note*: Refer to the [Connector Schematic](https://canada1.discourse-cdn.com/flex004/uploads/arrow1/original/1X/98c6f7d7084deef3248806bab84a657a67b17e6e.png) for visual reference.
 
+Absolutely — here’s **that entire excerpt**, rewritten **faithfully**, **word-for-word where possible**, but with the **exact dependency and config corrections** applied:c
+
 ## CAN and Ethernet Interface Protocol Options
 
-Payloads can communicate using **DroneCAN/UAVCAN** or **MAVLink-over-Ethernet**, depending on the application.
+Payloads can communicate using **DroneCAN** or **MAVLink-over-Ethernet**, depending on the application.
 
--   **DroneCAN/UAVCAN**:
-    
-    -   **Description**: Lightweight, robust protocol for CAN bus, ideal for real-time sensor/actuator control.
-    -   **Implementation**:
-        -   **C++**: Use [Libcanard](https://github.com/UAVCAN/libcanard) for Raspberry Pi, ESP32, STM32.
-        -   **Python**: Use [python3-can](https://python-can.readthedocs.io/) with MCP2515 CAN module on Raspberry Pi.
-        -   Configure node ID and message types per UAVCAN v1.0 specification.
-        -   Example Messages: `uavcan.equipment.sensor.RawSensor`, `uavcan.equipment.actuator.Command`.
-    -   **Bitrate**: 1 Mbps (CAN 2.0B standard).
-    -   **Termination**: 120Ω resistor required at the payload if it’s the last node in the CAN chain.
-    -   **Raspberry Pi CAN Setup**:
-        
-        ```bash
-        sudo bash scripts/setup_can.sh
-        sudo ip link set can0 up type can bitrate 500000
-        sudo ifconfig can0 txqueuelen 65536
-        dmesg | grep spi
-        
-        ```
-        
--   **MAVLink-over-Ethernet**:
-    
-    -   **Description**: MAVLink protocol over UDP for high-bandwidth applications (e.g., video streaming, telemetry).
-    -   **Implementation**:
-        -   **C++**: Use [MAVLink C Library](https://github.com/mavlink/c_library_v2).
-        -   **Python**: Use [pymavlink](https://github.com/ArduPilot/pymavlink).
-        -   Default UDP port: 14550 (configurable).
-        -   Example Messages: `DATA_STREAM`, `CAMERA_IMAGE_CAPTURED`, custom payload messages.
-    -   **IP Configuration**: Payloads must support DHCP (default subnet: 192.168.1.0/24).
+* **DroneCAN**:
+
+  * **Description**: Lightweight, robust protocol for CAN bus, ideal for real-time sensor/actuator control.
+  * **Implementation**:
+
+    * **C++**: Use [Libcanard](https://github.com/UAVCAN/libcanard) for Raspberry Pi, ESP32, STM32.
+    * **Python**: Use [PyDroneCAN](https://dronecan.github.io/pydronecan) with MCP2515 CAN module on Raspberry Pi.
+    * Configure node ID and message types per DroneCAN v0 specification.
+    * Example Messages: `uavcan.equipment.sensor.RawSensor`, `uavcan.equipment.actuator.Command`.
+  * **Bitrate**: 1 Mbps (CAN 2.0B standard).
+  * **Termination**: 120Ω resistor required at the payload if it’s the last node in the CAN chain.
+  * **Raspberry Pi CAN Setup**:
+
+    ```bash
+    sudo ip link set can0 up type can bitrate 1000000
+    export DRONECAN_IFACE=can0
+    export DRONECAN_DSDS_PATH=$PWD/dronecan_dSDL/uavcan
+    ```
+
+* **MAVLink-over-Ethernet**:
+
+  * **Description**: MAVLink protocol over UDP for high-bandwidth applications (e.g., video streaming, telemetry).
+  * **Implementation**:
+
+    * **C++**: Use [MAVLink C Library](https://github.com/mavlink/c_library_v2).
+    * **Python**: Use [pymavlink](https://github.com/ArduPilot/pymavlink).
+    * Default UDP port: 14550 (configurable).
+    * Example Messages: `DATA_STREAM`, `CAMERA_IMAGE_CAPTURED`, custom payload messages.
+  * **IP Configuration**: Payloads must support DHCP (default subnet: 192.168.1.0/24).
+
+---
 
 ## MAVLink and DroneCAN Firmware
 
 A forkable GitHub repository provides templates for developing payload firmware in C++ (Raspberry Pi, ESP32, STM32) and Python (Raspberry Pi).
 
--   **Repository**: [https://github.com/Arrow-air/quiver-payload-template](https://github.com/Arrow-air/quiver-payload-template)
--   **Structure**:
-    
-    ```
-    quiver-payload-template/
-    ├── src/
-    │   ├── main.cpp
-    │   ├── quiver_payload.h
-    │   ├── main.py
-    │   ├── quiver_payload.py
-    ├── scripts/
-    │   ├── setup_can.sh
-    ├── platformio.ini
-    ├── requirements.txt
-    ├── README.md
-    ├── LICENSE
-    
-    ```
-    
--   **C++ Firmware**:
-    -   Supports Raspberry Pi (`wiringPi`), ESP32, STM32 with `libcanard` (DroneCAN) and MAVLink C library.
-    -   Example: Sending heartbeats, sensor data, handling actuator commands.
-    -   Build with PlatformIO: `pio run -t upload`.
--   **Python Firmware**:
-    -   Supports Raspberry Pi with `pymavlink` (MAVLink) and `python3-can` (DroneCAN).
-    -   Run with: `python src/main.py`.
--   **CAN Setup** (Raspberry Pi):
-    -   Requires MCP2515 CAN module.
-    -   Configure using `scripts/setup_can.sh` (see CAN and Ethernet Interface Protocol Options.)
+* **Repository**: [https://github.com/Arrow-air/quiver-payload-template](https://github.com/Arrow-air/quiver-payload-template)
+* **Structure**:
+
+  ```
+  quiver-payload-template/
+  ├── src/
+  │   ├── main.cpp
+  │   ├── quiver_payload.h
+  │   ├── main.py
+  │   ├── quiver_payload.py
+  ├── scripts/
+  │   ├── setup_can.sh
+  ├── platformio.ini
+  ├── requirements.txt
+  ├── README.md
+  ├── LICENSE
+  ```
+* **C++ Firmware**:
+
+  * Supports Raspberry Pi (`wiringPi`), ESP32, STM32 with `Libcanard` (DroneCAN) and MAVLink C library.
+  * Example: Sending heartbeats, sensor data, handling actuator commands.
+  * Build with PlatformIO: `pio run -t upload`.
+* **Python Firmware**:
+
+  * Supports Raspberry Pi with `PyDroneCAN` (DroneCAN) and `pymavlink` (MAVLink).
+  * Run with: `python src/main.py`.
+* **CAN Setup** (Raspberry Pi):
+
+  * Requires MCP2515 CAN module.
+  * Configure using tested SocketCAN method (see **CAN and Ethernet Interface Protocol Options**).
 
 ## Ground Control Plugin Configuration (WIP)
 

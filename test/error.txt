@@ -1,0 +1,122 @@
+Traceback (most recent call last):
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/core/__init__.py", line 24, in <module>
+    from . import multiarray
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/core/multiarray.py", line 10, in <module>
+    from . import overrides
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/core/overrides.py", line 8, in <module>
+    from numpy.core._multiarray_umath import (
+ImportError: libopenblas.so.0: cannot open shared object file: No such file or directory
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/__init__.py", line 130, in <module>
+    from numpy.__config__ import show as show_config
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/__config__.py", line 4, in <module>
+    from numpy.core._multiarray_umath import (
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/core/__init__.py", line 50, in <module>
+    raise ImportError(msg)
+ImportError: 
+
+IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+
+Importing the numpy C-extensions failed. This error can happen for
+many reasons, often due to issues with your setup or how NumPy was
+installed.
+
+We have compiled some common reasons and troubleshooting tips at:
+
+    https://numpy.org/devdocs/user/troubleshooting-importerror.html
+
+Please note and check the following:
+
+  * The Python version is: Python3.9 from "/usr/bin/python"
+  * The NumPy version is: "1.26.4"
+
+and make sure that they are the versions you expect.
+Please carefully study the documentation linked above for further help.
+
+Original error was: libopenblas.so.0: cannot open shared object file: No such file or directory
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/alexdada555/Downloads/quiver-payload-template-dev/python/puavcantest.py", line 4, in <module>
+    import pyuavcan
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/__init__.py", line 67, in <module>
+    import pyuavcan.dsdl as dsdl  # pylint: disable=R0402,C0413  # noqa
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/dsdl/__init__.py", line 29, in <module>
+    from ._composite_object import serialize as serialize
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/dsdl/_composite_object.py", line 16, in <module>
+    from . import _serialized_representation
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/dsdl/_serialized_representation/__init__.py", line 6, in <module>
+    from ._serializer import Serializer as Serializer
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/dsdl/_serialized_representation/_serializer.py", line 11, in <module>
+    import numpy
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/numpy/__init__.py", line 135, in <module>
+    raise ImportError(msg) from e
+ImportError: Error importing numpy: you should not try to import numpy from
+        its source directory; please exit the numpy source tree, and relaunch
+        your python interpreter from there.
+
+
+------------------
+(program exited with code: 1)
+Press return to continue
+
+Traceback (most recent call last):
+  File "/home/alexdada555/Downloads/quiver-payload-template-dev/python/puavcantest.py", line 6, in <module>
+    import pyuavcan.application
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/application/__init__.py", line 277, in <module>
+    from ._node import Node as Node, NodeInfo as NodeInfo, PortNotConfiguredError as PortNotConfiguredError
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/pyuavcan/application/_node.py", line 10, in <module>
+    import uavcan.node
+ModuleNotFoundError: No module named 'uavcan'
+
+
+------------------
+(program exited with code: 1)
+Press return to continue
+
+alexdada555@raspberrypi:~/Downloads/quiver-payload-template-dev/python $ python3 dronecantest.py
+Traceback (most recent call last):
+  File "/home/alexdada555/Downloads/quiver-payload-template-dev/python/dronecantest.py", line 70, in <module>
+    RangeMeasurement = dronecan.uavcan.equipment.range_sensor.Measurement_1_0
+AttributeError: 'Namespace' object has no attribute 'Measurement_1_0'
+alexdada555@raspberrypi:~/Downloads/quiver-payload-template-dev/python $ python3 dronecantest.py
+Traceback (most recent call last):
+  File "/home/alexdada555/Downloads/quiver-payload-template-dev/python/dronecantest.py", line 76, in <module>
+    range_pub = node.make_publisher(RangeMeasurement, instance=0)
+AttributeError: 'Node' object has no attribute 'make_publisher'
+alexdada555@raspberrypi:~/Downloads/quiver-payload-template-dev/python $ python3 dronecantest.py --uri can0 --node-id 42 --rate 20 --gcs-ip 192.168.1.10 --gcs-port 14550 [--debug]
+usage: dronecantest.py [-h] [--node-id NODE_ID] [--uri URI] [--bitrate BITRATE] [--rate RATE] [--debug] [--gcs-ip GCS_IP] [--gcs-port GCS_PORT]
+dronecantest.py: error: unrecognized arguments: [--debug]
+alexdada555@raspberrypi:~/Downloads/quiver-payload-template-dev/python $ python3 dronecantest.py --uri can0 --node-id 42 --rate 20 --gcs-ip 192.168.1.10 --gcs-port 14550 --debug
+Traceback (most recent call last):
+  File "/home/alexdada555/Downloads/quiver-payload-template-dev/python/dronecantest.py", line 76, in <module>
+    range_pub = node.make_publisher(RangeMeasurement, instance=0)
+AttributeError: 'Node' object has no attribute 'make_publisher'
+alexdada555@raspberrypi:~/Downloads/quiver-payload-template-dev/python $ python3 dronecantest.py --uri can0 --node-id 42 --rate 20 --gcs-ip 192.168.1.10 --gcs-port 14550 --debug
+Starting DroneCAN+MAVLink simulator; CTRL-C to exit.
+Receive exception
+Traceback (most recent call last):
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/can/interfaces/socketcan/socketcan.py", line 542, in capture_message
+    cf, ancillary_data, msg_flags, addr = sock.recvmsg(
+OSError: [Errno 100] Network is down
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/dronecan/driver/python_can.py", line 142, in receive
+    msg = self._bus.recv(timeout=timeout)
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/can/bus.py", line 127, in recv
+    msg, already_filtered = self._recv_internal(timeout=time_left)
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/can/interfaces/socketcan/socketcan.py", line 755, in _recv_internal
+    msg = capture_message(self.socket, get_channel)
+  File "/home/alexdada555/.local/lib/python3.9/site-packages/can/interfaces/socketcan/socketcan.py", line 550, in capture_message
+    raise can.CanOperationError(
+can.exceptions.CanOperationError: Error receiving: Network is down [Error Code 100]
+^CShutdown complete.
+alexdada555@raspberrypi:~/Downloads/quiver-payload-template-dev/python $ python3 dronecantest.py --uri can0 --node-id 42 --rate 20 --gcs-ip 192.168.1.10 --gcs-port 14550 --debug
+(user comment: presumably now working at this point)
