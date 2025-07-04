@@ -7,22 +7,26 @@
 A template repository for developing payload firmware for the Quiver UAS, supporting **C++** (Raspberry Pi, ESP32, STM32) and **Python** (Raspberry Pi) with **MAVLink** and **DroneCAN** protocols. It integrates with the Quiver's Pixhawk and Ardupilot ecosystem via a 10-pin Molex Mini-Fit Jr. connector.
 
 ## Table of Contents
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Setup Instructions](#setup-instructions)
-  - [C++ Setup (Raspberry Pi, ESP32, STM32)](#c-setup-raspberry-pi-esp32-stm32)
-  - [Python Setup (Raspberry Pi)](#python-setup-raspberry-pi)
-- [Hardware Connections](#hardware-connections)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
-- [Support](#support)
+- [Quiver Payload Firmware Template](#quiver-payload-firmware-template)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Prerequisites](#prerequisites)
+    - [Hardware](#hardware)
+    - [Software](#software)
+  - [Setup Instructions](#setup-instructions)
+    - [C++ Setup (Raspberry Pi, ESP32, STM32)](#c-setup-raspberry-pi-esp32-stm32)
+    - [Python Setup (Raspberry Pi)](#python-setup-raspberry-pi)
+  - [Hardware Connections](#hardware-connections)
+  - [Testing](#testing)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Support](#support)
 
 ## Features
 - **Protocols**: MAVLink and DroneCAN for robust communication.
 - **Platforms**: C++ for Raspberry Pi, ESP32, STM32; Python for Raspberry Pi.
 - **Hardware Compatibility**: 10-pin Molex Mini-Fit Jr. connector (12V, 2.0A, CAN, Ethernet, analog/digital I/O).
-- **Example Code**: Heartbeats, sensor data, actuator control.
+- **Example Code**: Heartbeats, sensor data, camera.
 - **CAN Support**: MCP2515 for Raspberry Pi, native CAN for ESP32/STM32.
 
 ## Prerequisites
@@ -34,7 +38,7 @@ A template repository for developing payload firmware for the Quiver UAS, suppor
 
 ### Software
 - **C++**: PlatformIO IDE with Arduino framework.
-- **Python**: Python 3.7+ with `pymavlink`, `python-can`, `RPi.GPIO`.
+- **Python**: Python 3.7+ with `pymavlink`, `python-can`, `dronecan`, `RPi.GPIO`.
 - **Ground Control**: Mission Planner 1.3.77 or later.
 
 ## Setup Instructions
@@ -47,7 +51,7 @@ A template repository for developing payload firmware for the Quiver UAS, suppor
    ```
 2. Install PlatformIO and dependencies:
    ```bash
-   pio lib install "mavlink/c_library_v2" "uavcan/libcanard" "wiringpi/wiringpi" "espressif/esp32-can" "STM32duino/CAN"
+   pio lib install "mavlink/c_library_v2" "dronecan/libcanard" "wiringpi/wiringpi" "espressif/esp32-can" "STM32duino/CAN"
    ```
 3. Edit `platformio.ini` to select your target environment (`rpi`, `esp32`, or `stm32`).
 4. Build and upload:
@@ -68,19 +72,16 @@ A template repository for developing payload firmware for the Quiver UAS, suppor
    ```
 3. Configure CAN interfaces:
    ```bash
+   sudo bash scripts/setup_dronecan_node.sh
    sudo bash scripts/setup_can.sh
    ```
    After reboot, run:
    ```bash
-   sudo ip link set can0 up type can bitrate 500000
-   sudo ip link set can1 up type can bitrate 250000
-   sudo ifconfig can0 txqueuelen 65536
-   sudo ifconfig can1 txqueuelen 65536
-   dmesg | grep spi
+   sudo bash scripts/run_can.sh
    ```
 4. Run the Python script:
    ```bash
-   python src/main.py
+   python python/main.py
    ```
 5. Verify communication with Mission Planner.
 
@@ -92,7 +93,7 @@ A template repository for developing payload firmware for the Quiver UAS, suppor
 | **ESP32/STM32** | Native CAN pins (e.g., GPIO 5/4 for ESP32). ADC: GPIO 34 (ESP32).       |
 
 - **Power**: Ensure draw does not exceed 2.0A at 12V.
-- **Connector Pinout**: See [Quiver Integration Guide](#) for details.
+- **Connector Pinout**: See [Quiver Integration Guide](https://github.com/Arrow-air/quiver-payload-template/blob/main/Quiver%20Payload%20Integration%20Guide.md) for details.
 
 ## Testing
 - Use Mission Planner to verify MAVLink/DroneCAN communication (e.g., heartbeats, sensor data).

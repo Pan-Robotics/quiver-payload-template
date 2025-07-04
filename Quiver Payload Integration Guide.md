@@ -1,18 +1,18 @@
-﻿
-# Quiver Payload Integration Guide
+﻿# Quiver Payload Integration Guide
 
 This guide provides a comprehensive framework for manufacturers and developers to design and integrate quick-release payload attachments and peripherals for the Quiver UAS, with potential compatibility for future Arrow-air UASs. It outlines the hardware, electrical, and software standards necessary for seamless integration with Quiver’s custom hardware and its Pixhawk and Ardupilot ecosystem, including support for both MAVLink and DroneCAN protocols. The guide draws inspiration from the [uAvionix Ping Integration Guide](https://uavionix.com/downloads/integration/uAvionix%20Ping%20Integration%20Guide.pdf).
-
 ## Table of Contents
 
--   Connector Hardware Standard
--   Electrical Interface Standard
--   CAN and Ethernet Interface Protocol Options
--   MAVLink and DroneCAN Firmware
--   Ground Control Plugin Configuration
--   Example Potential Payload Attachments
--   Additional Guidelines
--   Support and Resources
+- [Quiver Payload Integration Guide](#quiver-payload-integration-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Connector Hardware Standard](#connector-hardware-standard)
+  - [Electrical Interface Standard](#electrical-interface-standard)
+  - [CAN and Ethernet Interface Protocol Options](#can-and-ethernet-interface-protocol-options)
+  - [MAVLink and DroneCAN Firmware](#mavlink-and-dronecan-firmware)
+  - [Ground Control Plugin Configuration (WIP)](#ground-control-plugin-configuration-wip)
+  - [Example Potential Payload Attachments](#example-potential-payload-attachments)
+  - [Additional Guidelines](#additional-guidelines)
+  - [Support and Resources](#support-and-resources)
 
 ## Connector Hardware Standard
 
@@ -42,6 +42,7 @@ The electrical interface ensures power delivery and signal communication between
     -   **Current Limit**: 2.0A maximum draw per payload to prevent overloading.
     -   **Protection**: Overcurrent and short-circuit protection on the Main PCB.
     -   **Switched Output**: Single 12V analog output for payload-specific power control (e.g., sensors, actuators).
+
 -   **Signal Interfaces**:
     
     -   **Ethernet**: Full-duplex, 100 Mbps, RJ45 standard (pins 1–4).
@@ -49,6 +50,7 @@ The electrical interface ensures power delivery and signal communication between
     -   **Analog**: Single analog I/O (0–5V) for sensor data or control (pin 7).
     -   **Digital I/O**: Single digital I/O connected to FMU_CH1 (3.3V logic, pin 8).
     -   **Power and Ground**: 12V power (pin 9), Ground (pin 10).
+
 -   **Connector Pinout**:
 The pin assignments for the 10-pin Molex Mini-Fit Jr. connector are as follows:  
 
@@ -78,8 +80,8 @@ Payloads can communicate using **DroneCAN** or **MAVLink-over-Ethernet**, depend
   * **Description**: Lightweight, robust protocol for CAN bus, ideal for real-time sensor/actuator control.
   * **Implementation**:
 
-    * **C++**: Use [Libcanard](https://github.com/UAVCAN/libcanard) for Raspberry Pi, ESP32, STM32.
-    * **Python**: Use [PyDroneCAN](https://dronecan.github.io/pydronecan) with MCP2515 CAN module on Raspberry Pi.
+    * **C++**: Use [Libcanard](https://github.com/dronecan/libcanard) for Raspberry Pi, ESP32, STM32.
+    * **Python**: Use [PyDroneCAN](https://github.com/dronecan/pydronecan) with MCP2515 CAN module on Raspberry Pi.
     * Configure node ID and message types per DroneCAN v0 specification.
     * Example Messages: `uavcan.equipment.sensor.RawSensor`, `uavcan.equipment.actuator.Command`.
   * **Bitrate**: 1 Mbps (CAN 2.0B standard).
@@ -114,14 +116,25 @@ A forkable GitHub repository provides templates for developing payload firmware 
 
   ```
   quiver-payload-template/
-  ├── src/
+  ├── C++/
   │   ├── main.cpp
   │   ├── quiver_payload.h
+  ├── python/
   │   ├── main.py
   │   ├── quiver_payload.py
+  ├── ├── MockModules/
+  │   ├── ├── Camera/
+  │   ├── ├── ├── main.py
+  │   ├── ├── ├── quiver_payload.py
+  │   ├── ├── RangeFinder/
+  │   ├── ├── ├── main.py
+  │   ├── ├── ├── quiver_payload.py
   ├── scripts/
+  │   ├── run_can.sh
   │   ├── setup_can.sh
+  │   ├── setup_dronecan_node.sh
   ├── platformio.ini
+  ├── Quiver Payload Integration Guide.md
   ├── requirements.txt
   ├── README.md
   ├── LICENSE
@@ -131,10 +144,12 @@ A forkable GitHub repository provides templates for developing payload firmware 
   * Supports Raspberry Pi (`wiringPi`), ESP32, STM32 with `Libcanard` (DroneCAN) and MAVLink C library.
   * Example: Sending heartbeats, sensor data, handling actuator commands.
   * Build with PlatformIO: `pio run -t upload`.
+
 * **Python Firmware**:
 
   * Supports Raspberry Pi with `PyDroneCAN` (DroneCAN) and `pymavlink` (MAVLink).
-  * Run with: `python src/main.py`.
+  * Run with: `python3 main.py`.
+
 * **CAN Setup** (Raspberry Pi):
 
   * Requires MCP2515 CAN module.
@@ -149,11 +164,13 @@ Payload configuration going to be supported via a custom Mission Planner plugin.
     -   **Repository**: [https://github.com/Arrow-air/quiver-mission-planner-plugin](https://github.com/Arrow-air/quiver-mission-planner-plugin)
     -   **Compatibility**: Mission Planner 1.3.77 or later.
     -   Features: Real-time telemetry, parameter configuration, control of 12V switched output and digital I/O.
+
 -   **Setup Instructions**:
     
     1.  Download and install the plugin from the repository.
     2.  In Mission Planner, go to **CONFIG > Plugins** and load the Quiver plugin.
     3.  Configure payload parameters (e.g., sensor gain, output triggers) via the plugin UI.
+
 -   **Example Configuration**:
     
     -   **Parameter**: `PAYLOAD_SENSOR_GAIN` (adjust sensor sensitivity).
@@ -168,16 +185,19 @@ Based on the [Possible Attachment List](https://github.com/DowFisherKBM/project-
     -   Function: Measures temperature, humidity, pressure.
     -   Interface: CAN (DroneCAN) for data, 12V power for heater.
     -   Example Message: `SCALED_PRESSURE` (MAVLink), `uavcan.equipment.sensor.RawSensor` (DroneCAN).
+
 -   **Camera**:
     
     -   Function: Captures high-resolution images/video.
     -   Interface: Ethernet for streaming, digital I/O for triggering.
     -   Example Message: `CAMERA_IMAGE_CAPTURED` (MAVLink).
+
 -   **LIDAR**:
     
     -   Function: 3D mapping, obstacle detection.
     -   Interface: Ethernet for high-bandwidth data, 12V power.
     -   Example Message: `DISTANCE_SENSOR` (MAVLink).
+
 -   **Agricultural Sprayer**:
     
     -   Function: Dispenses liquid for precision agriculture.
@@ -191,11 +211,13 @@ Based on the [Possible Attachment List](https://github.com/DowFisherKBM/project-
     -   Payloads must not exceed 10 kg to maintain UAS stability.
     -   Shield for electromagnetic interference (EMI) to avoid disrupting avionics.
     -   Test payloads in a controlled environment before deployment.
+
 -   **Testing and Validation**:
     
     -   Use the provided firmware template and Mission Planner plugin to verify communication.
     -   Simulate payload operation with a bench setup using the 10-pin connector.
     -   Ensure power draw stays within 2.0A under maximum load.
+
 -   **Documentation**:
     
     -   Provide wiring diagrams, firmware setup, and Mission Planner configuration details.
@@ -208,4 +230,4 @@ Based on the [Possible Attachment List](https://github.com/DowFisherKBM/project-
 -   **Documentation**:
     -   [Ardupilot Documentation](https://ardupilot.org/)
     -   [MAVLink Developer Guide](https://mavlink.io/)
-    -   [UAVCAN Specification](https://uavcan.org/)
+    -   [Drone Specification](https://dronecan.github.io/)
